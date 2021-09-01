@@ -32,7 +32,7 @@ setup(
     long_description_content_type='text/markdown',
     author='BMT Commercial Australia Pty Ltd, Jaap van der Velde',
     author_email='jaap.vandervelde@bmtglobal.com',
-    url='',
+    url='https://gitlab.com/jaapvandervelde/colchian',
     keywords=['json', 'validator'],
     install_requires=[],
     classifiers=[

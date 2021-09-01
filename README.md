@@ -33,6 +33,13 @@ with open('my.json') as f:
     except SyntaxError as e:
         print(f'Something is wrong: {e}')
 ```
+A valid `my.json`:
+```json
+{
+  "an integer": 42,
+  "some strings": ["vastly", "hugely", "mind-bogglingly", "big"]
+}
+```
 
 To use Colchian:
 - create a dictionary that defines the structure and types of a valid data dictionary (from a .json document);
@@ -68,9 +75,11 @@ That is, the function should expect the value to validate as the first positiona
 
 To keep things easily organised, you should probably define such functions as methods on child of the Colchian class. For example:
 ```python
+from typing import List
 from colchian import Colchian
 
-def MyColchian(Colchian):
+class MyColchian(Colchian):
+    @staticmethod
     def fizzbuzz(xs: List[int], fizz: str, buzz: str, strict: bool, keys: List[str]):
         return [fizz*(i % 3 == 0)+buzz*(i % 5 == 0) or i for i in xs]
 
@@ -79,7 +88,7 @@ data = {
 }
 
 type_dict = {
-    'xs': MyColchian.fizzbuzz
+    'xs': (MyColchian.fizzbuzz, 'fizz', 'buzz')
 }
 
 print(MyColchian.validated(data, type_dict))
