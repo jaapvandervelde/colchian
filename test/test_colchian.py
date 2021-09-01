@@ -243,15 +243,53 @@ class TestJsonTyping(unittest.TestCase):
         with self.assertRaises(SyntaxError, msg='only int accepted in list of int when strict'):
             Colchian.validated({'xs': ['3']}, td)
         self.assertEqual({'xs': [1, 2, 3]}, Colchian.validated({'xs': [1.0, 2, '3']}, td, strict=False),
-                         'list int values are casted when not strict')
+                         'list int values are cast when not strict')
         with self.assertRaises(SyntaxError, msg='only str accepted in list of str when strict'):
             Colchian.validated({'zs': [3]}, td)
         self.assertEqual({'zs': ['1.0', '2', '3']}, Colchian.validated({'zs': [1.0, 2, '3']}, td, strict=False),
-                         'list str values are casted when not strict')
+                         'list str values are cast when not strict')
         self.assertEqual({'xs': [1, 2, 3]},
                          Colchian.validated({'xs': [1.0, 2, '3']}, {'xs': typing.List[int]}, strict=False),
-                         'list str values are casted when not strict')
+                         'list int values are cast when not strict')
 
     def test_values(self):
         self.assertEqual({'x': 'a', 'y': 'c'}, Colchian.validated({'x': 'a', 'y': 'c'}, {'x': ('a', 'b'), 'y': 'c'}),
                          'values get correctly resolved')
+
+    def test_type_key(self):
+        self.assertEqual({1: 'one'}, Colchian.validated({1: 'one'}, {int: 'one'}),
+                         'type keys are validated')
+        with self.assertRaises(SyntaxError, msg='type key mismatch caught'):
+            Colchian.validated({'1': 'one'}, {int: 'one'})
+        with self.assertRaises(SyntaxError, msg='type key value mismatch caught'):
+            Colchian.validated({1: 'one'}, {int: 'two'})
+
+    def test_callable_key(self):
+        def uppercase(x, strict, keys):
+            if x.upper() != x:
+                raise SyntaxError('key not in uppercase')
+            return x
+        self.assertEqual({'ABC': 1}, Colchian.validated({'ABC': 1}, {uppercase: int}),
+                         'callable keys are validated')
+        with self.assertRaises(SyntaxError, msg='callable key mismatch caught'):
+            Colchian.validated({'Abc': 1}, {uppercase: int})
+        with self.assertRaises(SyntaxError, msg='callable key value mismatch caught'):
+            Colchian.validated({'ABC': 'one'}, {uppercase: int})
+
+    def test_callable_parameters_key(self):
+        def greater(x, y, strict, keys):
+            if x <= y:
+                raise SyntaxError(f'{x} not greater than {y}')
+            return x
+        self.assertEqual({4: 1}, Colchian.validated({4: 1}, {(greater, 3): (greater, 0)}),
+                         'callable keys with parameters are validated')
+        with self.assertRaises(SyntaxError, msg='callable key with parameters mismatch caught'):
+            Colchian.validated({4: 1}, {(greater, 5): int})
+
+    def test_tuple_restricted_key(self):
+        self.assertEqual({3: 1, 4: 1}, Colchian.validated({3: 1, 4: 1}, {(3, 4): 1}),
+                         'tuple restricted keys are validated')
+        with self.assertRaises(SyntaxError, msg='tuple restricted key with parameters mismatch caught'):
+            Colchian.validated({3: 1, 5: 1}, {(3, 4): 1})
+        self.assertEqual({1: 1, 10: 1}, Colchian.validated({1: 1, 10: 1}, {tuple(range(1, 11)): 1}),
+                         'tuple restricted keys are validated')

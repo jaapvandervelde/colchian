@@ -45,7 +45,10 @@ class Colchian:
         if isinstance(data_type, dict):
             assert isinstance(x, dict)
             result = type(x)()
-            wildcards = {key: dt for key, dt in data_type.items() if key.split(':')[0] == '*'}
+            wildcards = {
+                key: dt for key, dt in data_type.items()
+                if callable(key) or isinstance(key, tuple) or key.split(':')[0] == '*'
+            }
             used_keys = []
             for key, type_value in data_type.items():
                 if key not in wildcards:
@@ -70,6 +73,21 @@ class Colchian:
                         new_keys = _keys + [key]
                         for wildcard in wildcards:
                             try:
+                                if isinstance(wildcard, type):
+                                    if not isinstance(key, wildcard):
+                                        raise SyntaxError(
+                                            f'key {cls.format_keys(new_keys)} not of specified type {type}')
+                                elif (
+                                    (callable(wildcard) and wildcard(key, strict=strict, keys=new_keys) != key)
+                                    or
+                                    (isinstance(wildcard, tuple) and callable(wildcard[0]) and
+                                     wildcard[0](key, *wildcard[1:], strict=strict, keys=new_keys) != key)
+                                   ):
+                                    raise SyntaxError(
+                                        f'mismatch between key {cls.format_keys(new_keys)} and generated key')
+                                elif isinstance(wildcard, tuple) and not callable(wildcard[0]) and key not in wildcard:
+                                    raise SyntaxError(
+                                        f'restricted key {cls.format_keys(new_keys)} not in {wildcard}')
                                 y = cls.validated(value, data_type[wildcard], strict, new_keys)
                                 break
                             except (SyntaxError, AssertionError) as e:

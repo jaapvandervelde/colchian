@@ -116,6 +116,7 @@ type_dict = {
     'xs': ((MyColchian.method1,), (MyColchian.method2,))
 }
 ```
+Similarly, if you want to validate an optional value against a function or method, you should use `(None, function_name)` instead of `(function_name, None)`, as that would result in a call to `function_name(value, None, strict, keys)`.
 
 An additional example is available in [typed_configuration.py](example/typed_configuration.py). Try that code and experiment with breaking [example_configuration.json](example/example_configuration.json) in interesting ways.
 
