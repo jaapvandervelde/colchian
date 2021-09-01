@@ -43,7 +43,8 @@ class Colchian:
         if _keys is None:
             _keys = []
         if isinstance(data_type, dict):
-            assert isinstance(x, dict)
+            if not isinstance(x, dict):
+                raise SyntaxError(f'expected {cls.format_keys(_keys)} to be a dict, not a {type(x)}')
             result = type(x)()
             wildcards = {
                 key: dt for key, dt in data_type.items()
@@ -90,7 +91,7 @@ class Colchian:
                                         f'restricted key {cls.format_keys(new_keys)} not in {wildcard}')
                                 y = cls.validated(value, data_type[wildcard], strict, new_keys)
                                 break
-                            except (SyntaxError, AssertionError) as e:
+                            except SyntaxError as e:
                                 if len(wildcards) == 1:
                                     raise SyntaxError(f'could not match to only wildcard {wildcard}, raised "{e}"')
                                 continue

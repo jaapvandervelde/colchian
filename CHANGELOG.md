@@ -4,6 +4,11 @@
 
 No unreleased changes pending
 
+## [0.0.4] - 2021-09-02
+
+### Fixed:
+  - an AssertionError was not caught correctly, and has been replaced with the expected SyntaxError
+
 ## [0.0.3] - 2021-09-01
 
 ### Added
@@ -32,6 +37,7 @@ type_dict = {
   - Unit tests for core functionality
 
 [Unreleased]: /../../../
+[0.0.4]: /../../../tags/0.0.4
 [0.0.3]: /../../../tags/0.0.3
 [0.0.2]: /../../../tags/0.0.2
 [0.0.1]: /../../../tags/0.0.1
