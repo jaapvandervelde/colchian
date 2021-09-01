@@ -1,0 +1,17 @@
+{
+  "working directory": "C:/temp",
+  "files": "*.txt",
+  "users": ["Alice", "Bob", "Charlie", 1],
+  "program A": {
+    "executable": "C:/Windows/notepad.exe",
+    "arguments": ["/W", "%1"]
+  },
+  "program B": {
+    "executable": "C:/Windows/write.exe",
+    "arguments": {
+      "/p": "%1",
+      "margin": 4
+    },
+    "wait": true
+  }
+}

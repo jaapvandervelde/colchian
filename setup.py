@@ -2,7 +2,7 @@ import os
 import re
 from setuptools import setup
 
-__name__ = 'python_package'
+__name__ = 'colchian'
 
 version_fn = os.path.join(__name__, "_version.py")
 __version__ = "unknown"
@@ -24,29 +24,21 @@ with open("README.md", "r") as rm:
 
 setup(
     name=__name__,
-    packages=['python_package'],
+    packages=['colchian'],
     version=__version__,
-    # TODO: update license
-    license='',
-    # TODO: update description
-    description='No description.',
-    # long description will be the contents of project/README.md
+    license='MIT',
+    description='Validate json documents using a Python dictionary defining keys and types.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    # TODO: update author
-    author='BMT Commercial Australia Pty Ltd, <optional author(s)>',
-    # TODO: update email
-    author_email='',
-    # TODO: update Git repository URL
+    author='BMT Commercial Australia Pty Ltd, Jaap van der Velde',
+    author_email='jaap.vandervelde@bmtglobal.com',
     url='',
-    # TODO: update keywords
-    keywords=[],
-    # TODO: update requirements (typically matches requirements.txt)
+    keywords=['json', 'validator'],
     install_requires=[],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ]
 )

@@ -1,1 +1,4 @@
-Use this folder to write some examples that showcase how the package should be used.
+# Typed configuration
+
+The [typed_configuration.py](example/typed_configuration.py) script shows how a data type dictionary (defined in Python) can be used to validate a .json document.
+
