@@ -196,3 +196,5 @@ Colchian.type_factories[MyDict] = create_my_dict
 # validated_dict will have settings matching some_dict
 validated_dict = Colchian.validated(some_dict, {'a': int})
 ```
+
+Note: this behaviour also means that Colchian will reconstruct lists - it does not check `type_factories` when doing so. It is assumed Colchian is primarily applied to dictionaries derived from .json documents, and only accounts for data types it would encounter in them.
