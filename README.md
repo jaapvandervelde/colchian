@@ -4,7 +4,7 @@ In Greek mythology, the Colchian Dragon guarded the Golden Fleece. Jason was sen
 
 The `colchian` package contains the `Colchian` class, which can be used to validate .json documents, or rather the Python `dict` resulting from loading a .json file with `json.load()`.
 
-Colchian was developed with validation of Conffu (https://pypi.org/project/conffu/) configurations in mind, but will work for any reasonably sized .json file (no testing was performed for large documents, nor has the code been optimised for performance).
+Colchian was developed with validation of .json configurations in mind, specifically those provided by the Conffu (https://pypi.org/project/conffu/) package, but will work for any reasonably sized .json file (no testing was performed for large documents, nor has the code been optimised for performance).
 
 ## Installation
 
@@ -160,3 +160,39 @@ Makes this `vehicles.json` a valid file:
 }
 ```
 Note that you can't use the key `'*'` twice, which is why the wildcards are distinguished as `'*:1'` and `'*:2'`.
+
+# Dictionary constructor
+
+When you call `Colchian.validate()` with some dictionary, it constructs a new instance of that dictionary and all of its parts. If you pass it some subclass of a dictionary (as for example, a Conffu DictConfig), you may want to pass specific parameters to its constructor.
+
+```python
+from colchian import Colchian
+
+
+class MyDict(dict):
+    # your dict (class or instance) may have some attribute that's important to you
+    important = True
+
+    def __init__(self, *args, some_param=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        # and possibly, you want it set as the object is constructed
+        self.some_attribute = some_param
+
+
+def create_my_dict(md):
+    # create a new object of the same type as md, passing parameters to its constructor matching those of md
+    result = type(md)(some_param=md.some_param)
+    # set other attributes to match the passed object md 
+    result.important = md.important
+    # return the newly created object
+    return result
+
+
+# create a MyDict with specific settings
+some_dict = MyDict({'a': 1}, some_param=False)
+some_dict.important = False
+# tell colchian to use a factory function when creating new instances of MyDict, instead of just the constructor
+Colchian.type_factories[MyDict] = create_my_dict
+# validated_dict will have settings matching some_dict
+validated_dict = Colchian.validated(some_dict, {'a': int})
+```
