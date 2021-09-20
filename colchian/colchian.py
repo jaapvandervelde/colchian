@@ -6,6 +6,8 @@ from copy import copy
 class Colchian:
     logger = getLogger()
 
+    type_factories = {}
+
     @staticmethod
     def format_keys(keys: List[str]):
         keys = "".join(
@@ -45,7 +47,14 @@ class Colchian:
         if isinstance(data_type, dict):
             if not isinstance(x, dict):
                 raise SyntaxError(f'expected {cls.format_keys(_keys)} to be a dict, not a {type(x)}')
-            result = type(x)()
+            # if a constructor override was provided for type of x, call that with x, instead of the type constructor
+            for t in cls.type_factories:
+                if isinstance(x, t):
+                    result = cls.type_factories[t](x)
+                    # no check for multiple matches, first hit wins
+                    break
+            else:
+                result = type(x)()
             wildcards = {
                 key: dt for key, dt in data_type.items()
                 if callable(key) or isinstance(key, tuple) or key.split(':')[0] == '*'

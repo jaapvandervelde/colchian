@@ -4,6 +4,23 @@
 
 No unreleased changes pending
 
+## [0.0.5] - 2021-09-02
+
+### Added:
+  - The Colchian class now has a class attribute `type_factories`, which is a dictionary of type to factory function for that type. It allows you to set an override function for `.validated()` to use when creating a new instance of a dictionary to return from `.validated()`. This is only required if the constructor requires parameters - the factory function will be called with the original dict and is expected to return a new, empty instance of the same dictionary class.
+```python
+    class MyDict(dict):
+        important = True
+
+    def my_dict_factory(x: MyDict):
+        result = type(x)()
+        result.important = x.important
+        return result
+
+    Colchian.type_factories[MyDict] = my_dict_factory
+```
+In this example, any dictionaries of type `MyDict`  returned by `Colchian.validated()` would have `.important` set to the same value as their corresponding `MyDict` in the dictionary being validated.
+
 ## [0.0.4] - 2021-09-02
 
 ### Fixed:
@@ -37,6 +54,7 @@ type_dict = {
   - Unit tests for core functionality
 
 [Unreleased]: /../../../
+[0.0.5]: /../../../tags/0.0.5
 [0.0.4]: /../../../tags/0.0.4
 [0.0.3]: /../../../tags/0.0.3
 [0.0.2]: /../../../tags/0.0.2

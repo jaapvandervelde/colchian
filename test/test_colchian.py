@@ -293,3 +293,32 @@ class TestJsonTyping(unittest.TestCase):
             Colchian.validated({3: 1, 5: 1}, {(3, 4): 1})
         self.assertEqual({1: 1, 10: 1}, Colchian.validated({1: 1, 10: 1}, {tuple(range(1, 11)): 1}),
                          'tuple restricted keys are validated')
+
+    def test_constructor_override(self):
+        class MyDict(dict):
+            important = True
+
+        def my_dict_factory(x: MyDict):
+            result = type(x)()
+            result.important = x.important
+            return result
+
+        class MyDict2(MyDict):
+            important = True
+            also_important = True
+
+        Colchian.type_factories[MyDict] = my_dict_factory
+
+        md = Colchian.validated(MyDict({'a': 1}), {'a': int})
+        self.assertEqual(True, md.important, 'attribute on overridden class is set')
+
+        md = MyDict({'a': 1})
+        md.important = False
+        md = Colchian.validated(md, {'a': int})
+        self.assertEqual(False, md.important, 'attribute on overridden class is set correctly')
+
+        md = MyDict2({'a': 1})
+        md.important = False
+        md = Colchian.validated(md, {'a': int})
+        self.assertEqual(False, md.important, 'attribute on overridden class is set correctly on child class')
+        self.assertIsInstance(md, MyDict2, 'correct constructor is used in construction validated result')
