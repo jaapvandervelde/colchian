@@ -4,6 +4,11 @@
 
 No unreleased changes pending
 
+## [0.0.6] - 2021-09-02
+
+### Fixed:
+  - Formatting keys would fail if an unexpected type was present as a dictionary key, or an empty string was used as a key
+
 ## [0.0.5] - 2021-09-02
 
 ### Added:
@@ -54,6 +59,7 @@ type_dict = {
   - Unit tests for core functionality
 
 [Unreleased]: /../../../
+[0.0.6]: /../../../tags/0.0.6
 [0.0.5]: /../../../tags/0.0.5
 [0.0.4]: /../../../tags/0.0.4
 [0.0.3]: /../../../tags/0.0.3

@@ -12,8 +12,8 @@ class Colchian:
     def format_keys(keys: List[str]):
         keys = "".join(
             f"[\"{key}\"]" if i == 0 else f"[\"{key}\"]"
-            if key[0] + key[-1] != "[]"
-            else key for i, key in enumerate(keys))
+            if isinstance(key, str) and len(key) > 0 and key[0] + key[-1] != "[]"
+            else str(key) for i, key in enumerate(keys))
         return f'`{keys}`'
 
     @classmethod
