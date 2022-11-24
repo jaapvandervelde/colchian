@@ -74,7 +74,7 @@ class Colchian:
                              and None in type_value)):
                         continue
                     if key not in x:
-                        raise SyntaxError(f'missing required key {cls.format_keys(_keys)}')
+                        raise SyntaxError(f'missing required key {key} in {cls.format_keys(_keys)}')
                     result[key] = cls.validated(x[key], type_value, strict, new_keys)
                     used_keys.append(key)
             if wildcards:
