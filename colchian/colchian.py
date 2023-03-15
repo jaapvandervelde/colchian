@@ -40,7 +40,7 @@ class Colchian:
                 name = data_type.__name__
             else:
                 name = 'unnamed function {data_type}'
-            raise SyntaxError(f'value at {cls.format_keys(keys)} passed to `{name}` raised {e}')
+            raise SyntaxError(f'value at {cls.format_keys(keys)} passed to `{name}` raised `{e}`')
 
     @classmethod
     def _fc(cls, f, *args, **kwargs):
@@ -149,7 +149,7 @@ class Colchian:
                                 break
                             except SyntaxError as e:
                                 if len(wildcards) == 1:
-                                    raise SyntaxError(f'could not match to only wildcard {wildcard}, raised "{e}"')
+                                    raise SyntaxError(f'could not match to only wildcard {wildcard}, raised `{e}`')
                                 continue
                         else:
                             if strict:

@@ -11,7 +11,8 @@ No unreleased changes pending
   - allow for keywords `keys` and `strict` to be optional in custom validation functions
 
 ### Fixed:
-  - correctly include the exact key causing a failure in error messages
+  - include the exact key causing a failure in error messages
+  - quote exception text using backticks instead of double quotes or no quotes
 
 ## [0.0.6] - 2021-09-02
 
