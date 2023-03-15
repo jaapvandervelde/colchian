@@ -32,7 +32,7 @@ class Colchian:
     @classmethod
     def _execute_callable(cls, x, data_type, *args, strict, keys, **kwargs):
         try:
-            return data_type(x, *args, strict=strict, keys=keys, **kwargs)
+            return cls._fc(data_type, x, *args, strict=strict, keys=keys, **kwargs)
         except SyntaxError as e:
             raise e
         except Exception as e:
