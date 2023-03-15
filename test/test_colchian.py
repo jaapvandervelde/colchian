@@ -295,12 +295,20 @@ class TestJsonTyping(unittest.TestCase):
             if x.upper() != x:
                 raise SyntaxError('key not in uppercase')
             return x
+
+        def uppercase_no_keywords(x):
+            if x.upper() != x:
+                raise SyntaxError('key not in uppercase')
+            return x
+
         self.assertEqual({'ABC': 1}, Colchian.validated({'ABC': 1}, {uppercase: int}),
                          'callable keys are validated')
         with self.assertRaises(SyntaxError, msg='callable key mismatch caught'):
             Colchian.validated({'Abc': 1}, {uppercase: int})
         with self.assertRaises(SyntaxError, msg='callable key value mismatch caught'):
             Colchian.validated({'ABC': 'one'}, {uppercase: int})
+        with self.assertRaises(SyntaxError, msg='same result with keywords lacking'):
+            Colchian.validated({'ABC': 'one'}, {uppercase_no_keywords: int})
 
     def test_callable_parameters_key(self):
         def greater(x, y, strict, keys):

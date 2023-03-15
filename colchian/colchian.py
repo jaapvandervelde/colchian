@@ -4,6 +4,8 @@ from copy import copy
 
 
 class Colchian:
+    ALLOW_INSPECT = True
+
     logger = getLogger()
 
     type_factories = {}
@@ -39,6 +41,17 @@ class Colchian:
             else:
                 name = 'unnamed function {data_type}'
             raise SyntaxError(f'value at {cls.format_keys(keys)} passed to `{name}` raised {e}')
+
+    @classmethod
+    def _fc(cls, f, *args, **kwargs):
+        if cls.ALLOW_INSPECT:
+            import inspect
+            i_args = inspect.getargs(f.__code__).args
+            if 'keys' in kwargs and 'keys' not in i_args:
+                del kwargs['keys']
+            if 'strict' in kwargs and 'strict' not in i_args:
+                del kwargs['strict']
+        return f(*args, **kwargs)
 
     @classmethod
     def validated(cls, x: Any, data_type: Any, strict: bool = True, _keys: Union[List, None] = None):
@@ -96,11 +109,11 @@ class Colchian:
                                                 raise SyntaxError(
                                                     f'key {cls.format_keys(new_keys)} cannot be cast to {wildcard}')
                                 elif (
-                                    (callable(wildcard) and wildcard(key, strict=strict, keys=new_keys) != key)
+                                    (callable(wildcard) and cls._fc(wildcard, key, strict=strict, keys=new_keys) != key)
                                     or
                                     (isinstance(wildcard, tuple) and callable(wildcard[0]) and
                                      not isinstance(wildcard[0], type) and
-                                     wildcard[0](key, *wildcard[1:], strict=strict, keys=new_keys) != key)
+                                     cls._fc(wildcard[0], key, *wildcard[1:], strict=strict, keys=new_keys) != key)
                                    ):
                                     raise SyntaxError(
                                         f'mismatch between key {cls.format_keys(new_keys)} and generated key')

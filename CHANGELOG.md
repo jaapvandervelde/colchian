@@ -8,6 +8,7 @@ No unreleased changes pending
 
 ### Added:
   - allow non-string types as keys in type dictionaries, as long as they are hashable; allowing for casts when not strict
+  - allow for keywords `keys` and `strict` to be optional in custom validation functions
 
 ### Fixed:
   - correctly include the exact key causing a failure in error messages
