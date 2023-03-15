@@ -85,19 +85,53 @@ class Colchian:
                             try:
                                 if isinstance(wildcard, type):
                                     if not isinstance(key, wildcard):
-                                        raise SyntaxError(
-                                            f'key {cls.format_keys(new_keys)} not of specified type {type}')
+                                        if strict:
+                                            raise SyntaxError(
+                                                f'key {cls.format_keys(new_keys)} not of specified type {wildcard}')
+                                        else:
+                                            try:
+                                                key = wildcard(key)
+                                                new_keys[-1] = key
+                                            except ValueError:
+                                                raise SyntaxError(
+                                                    f'key {cls.format_keys(new_keys)} cannot be cast to {wildcard}')
                                 elif (
                                     (callable(wildcard) and wildcard(key, strict=strict, keys=new_keys) != key)
                                     or
                                     (isinstance(wildcard, tuple) and callable(wildcard[0]) and
+                                     not isinstance(wildcard[0], type) and
                                      wildcard[0](key, *wildcard[1:], strict=strict, keys=new_keys) != key)
                                    ):
                                     raise SyntaxError(
                                         f'mismatch between key {cls.format_keys(new_keys)} and generated key')
-                                elif isinstance(wildcard, tuple) and not callable(wildcard[0]) and key not in wildcard:
-                                    raise SyntaxError(
-                                        f'restricted key {cls.format_keys(new_keys)} not in {wildcard}')
+                                elif (
+                                    isinstance(wildcard, tuple) and
+                                    (not callable(wildcard[0]) or isinstance(wildcard[0], type)) and
+                                    key not in wildcard
+                                   ):
+                                    types = []
+                                    converted = key
+                                    for w in wildcard:
+                                        if isinstance(w, type):
+                                            types.append(w)
+                                            try:
+                                                if isinstance(key, w):
+                                                    converted = key
+                                                    break
+                                                if id(key) == id(converted) and not strict:
+                                                    converted = w(key)
+                                            except ValueError:
+                                                continue
+                                    else:
+                                        if id(key) == id(converted):
+                                            if types:
+                                                raise SyntaxError(
+                                                    f'key {cls.format_keys(new_keys)} could not be cast to any {types}')
+                                            else:
+                                                raise SyntaxError(
+                                                    f'restricted key {cls.format_keys(new_keys)} not in {wildcard}')
+                                    key = converted
+                                    new_keys[-1] = key
                                 y = cls.validated(value, data_type[wildcard], strict, new_keys)
                                 break
                             except SyntaxError as e:

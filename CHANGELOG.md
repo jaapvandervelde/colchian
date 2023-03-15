@@ -4,6 +4,14 @@
 
 No unreleased changes pending
 
+## [0.0.7] - 2023-03-15
+
+### Added:
+  - allow non-string types as keys in type dictionaries, as long as they are hashable; allowing for casts when not strict
+
+### Fixed:
+  - correctly include the exact key causing a failure in error messages
+
 ## [0.0.6] - 2021-09-02
 
 ### Fixed:

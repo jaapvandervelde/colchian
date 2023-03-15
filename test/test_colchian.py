@@ -52,6 +52,27 @@ class TestJsonTyping(unittest.TestCase):
         }
         self.assertEqual(data, Colchian.validated(data, td),
                          'simple types check out')
+    def test_not_simple_types(self):
+        td = {
+            'i': int,
+            'f': float,
+        }
+        data = {
+            'i': 1,
+            'f': '1.5'
+        }
+        with self.assertRaises(SyntaxError, msg='simple types mismatches'):
+            Colchian.validated(data, td, strict=True)  # default
+        try:
+            Colchian.validated(data, td, strict=False)
+        except SyntaxError:
+            self.fail("simple types cast when not strict")
+        data = {
+            'i': 1,
+            'f': 'banana'
+        }
+        with self.assertRaises(SyntaxError, msg='simple types mismatches when not strict and no cast'):
+            Colchian.validated(data, td, strict=False)
 
     def test_wildcards(self):
         td = {
@@ -166,12 +187,17 @@ class TestJsonTyping(unittest.TestCase):
             Colchian.validated(data, td)
 
     def test_union_variants(self):
+        # helper tries int, str, and float value for 'x'
         self._test_union({
             'x': typing.Union[int, str]
         })
 
         self._test_union({
             'x': (int, str)
+        })
+
+        self._test_union({
+            'x': (None, typing.Union[int, str])
         })
 
         td = {
@@ -322,3 +348,43 @@ class TestJsonTyping(unittest.TestCase):
         md = Colchian.validated(md, {'a': int})
         self.assertEqual(False, md.important, 'attribute on overridden class is set correctly on child class')
         self.assertIsInstance(md, MyDict2, 'correct constructor is used in construction validated result')
+
+    def test_key_type(self):
+        td = {
+            int: int,
+        }
+        self.assertEqual({1: 2}, Colchian.validated({1: 2}, td), 'int key check works')
+        with self.assertRaises(SyntaxError, msg='cast not allowed when strict'):
+            Colchian.validated({'1': 2}, td, strict=True)
+        self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=False), 'int cast works when not strict')
+        with self.assertRaises(SyntaxError, msg='impossible cast not allowed') as cm:
+            Colchian.validated({'1.0': 2}, td, strict=False)
+        self.assertEqual(
+            'could not match to only wildcard <class \'int\'>, raised "key `["1.0"]` cannot be cast to <class \'int\'>"',
+            str(cm.exception)
+        )
+
+    def test_key_type_tuple(self):
+        td = {
+            (int, str): int,
+        }
+        self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=True),
+                         'int key allowed for (int, str) pair')
+        self.assertEqual({'test': 2}, Colchian.validated({'test': 2}, td, strict=True),
+                         'str key allowed for (int, str) pair')
+        td = {
+            (str, int): int,
+        }
+        self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=True),
+                         'no conversion to first type in pair')
+        with self.assertRaises(SyntaxError, msg='float key not allowed for strict (int, str)') as cm:
+            Colchian.validated({1.0: 2}, td, strict=True)
+        self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=True),
+                         'no conversion to first type in pair')
+        self.assertEqual({'1.0': 2}, Colchian.validated({1.0: 2}, td, strict=False),
+                         'conversion to first type (str, int) if not strict')
+        td = {
+            (int, str): int,
+        }
+        self.assertEqual({1: 2}, Colchian.validated({1.0: 2}, td, strict=False),
+                         'conversion to first type (int, str) if not strict')
