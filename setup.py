@@ -44,7 +44,8 @@ setup(
     extras_require={
         'dev': [
             'mkdocs',
-            'pymdown-extensions'
+            'pymdown-extensions',
+            'jinja2<=3.1.0'
         ]
     },
     classifiers=[
