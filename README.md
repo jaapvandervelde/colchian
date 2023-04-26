@@ -32,7 +32,7 @@ with open('my.json') as f:
     try:
         valid_data = Colchian.validated(data, type_dict)
         print(f'Valid:\n{dumps(valid_data)}')
-    except SyntaxError as e:
+    except Colchian.ValidationError as e:
         print(f'Something is wrong: {e}')
 ```
 A valid `my.json`:
@@ -47,7 +47,7 @@ To use Colchian:
 - create a dictionary that defines the structure and types of a valid data dictionary (from a .json document);
 - call `Colchian.validated()` with the data and the type dictionary;
 - the result will be the same data, with some data casted to the appropriate type, if `strict=False` is passed to the `.validated()` method;
-- a SyntaxError exception will be raised if the data is not valid according top the type_dict.
+- a Colchian.ValidationError exception will be raised if the data is not valid according top the type_dict.
 
 A few more tricks:
 - use the Python `typing` module to use special types like `Union`, `Any`, `List` or `Optional`;

@@ -4,6 +4,9 @@ from copy import copy
 
 
 class Colchian:
+    class ValidationError(Exception):
+        ...
+
     """
     Colchian is a library for validating and coercing data structures. You don't typically instantiate this class, but
     instead use the static and class methods to validate data.
@@ -118,7 +121,7 @@ class Colchian:
             the boolean value represented by `x`
 
         Raises:
-            SyntaxError: if `x` does not represent a bool
+            ValidationError: if `x` does not represent a bool
         """
         if isinstance(x, bool):
             return x
@@ -127,7 +130,7 @@ class Colchian:
                 return False
             if not strict or x.lower() in ['t', 'true']:
                 return True
-        raise SyntaxError(f'Invalid text_bool value: {x} {cls.format_keys(keys)}')
+        raise cls.ValidationError(f'Invalid text_bool value: {x} {cls.format_keys(keys)}')
 
     @classmethod
     def _execute_callable(cls, x, data_type, *args, strict, keys, **kwargs):
@@ -146,18 +149,18 @@ class Colchian:
             The function results of the call to `x` with the provided arguments
 
         Raises:
-            SyntaxError if the call to `x` raises an exception, containing the exception message
+            ValidationError if the call to `x` raises an exception, containing the exception message
         """
         try:
             return cls._fc(data_type, x, *args, strict=strict, keys=keys, **kwargs)
-        except SyntaxError as e:
+        except cls.ValidationError as e:
             raise e
         except Exception as e:
             if hasattr(data_type, '__name__'):
                 name = data_type.__name__
             else:
                 name = 'unnamed function {data_type}'
-            raise SyntaxError(f'value at {cls.format_keys(keys)} passed to `{name}` raised `{e}`')
+            raise cls.ValidationError(f'value at {cls.format_keys(keys)} passed to `{name}` raised `{e}`')
 
     @classmethod
     def _fc(cls, f, *args, **kwargs):
@@ -205,7 +208,7 @@ class Colchian:
             _keys = []
         if isinstance(data_type, dict):
             if not isinstance(x, dict):
-                raise SyntaxError(f'expected {cls.format_keys(_keys)} to be a dict, not a {type(x)}')
+                raise cls.ValidationError(f'expected {cls.format_keys(_keys)} to be a dict, not a {type(x)}')
             # if a constructor override was provided for type of x, call that with x, instead of the type constructor
             for t in cls.type_factories:
                 if isinstance(x, t):
@@ -218,12 +221,13 @@ class Colchian:
                 key: dt for key, dt in data_type.items()
                 if callable(key) or isinstance(key, tuple) or key.split(':')[0] == '*'
             }
+            values = {}
             used_keys = []
             for key, type_value in data_type.items():
                 if key not in wildcards:
                     new_keys = _keys + [key]
                     if not isinstance(key, str) and strict:
-                        raise SyntaxError(f'non-string dictionary key {cls.format_keys(_keys)}')
+                        raise cls.ValidationError(f'non-string dictionary key {cls.format_keys(_keys)}')
                     # if the value is optional
                     if key not in x and (
                             (hasattr(type_value, '__origin__')
@@ -233,8 +237,11 @@ class Colchian:
                              and None in type_value)):
                         continue
                     if key not in x:
-                        raise SyntaxError(f'missing required key {key} in {cls.format_keys(_keys)}')
-                    result[key] = cls.validated(x[key], type_value, strict, new_keys)
+                        raise cls.ValidationError(f'missing required key {key} in {cls.format_keys(_keys)}')
+                    if not wildcards:
+                        result[key] = cls.validated(x[key], type_value, strict, new_keys)
+                    else:
+                        values[key] = (x[key], type_value, strict, new_keys)
                     used_keys.append(key)
             if wildcards:
                 for key, value in x.items():
@@ -245,14 +252,14 @@ class Colchian:
                                 if isinstance(wildcard, type):
                                     if not isinstance(key, wildcard):
                                         if strict:
-                                            raise SyntaxError(
+                                            raise cls.ValidationError(
                                                 f'key {cls.format_keys(new_keys)} not of specified type {wildcard}')
                                         else:
                                             try:
                                                 key = wildcard(key)
                                                 new_keys[-1] = key
                                             except ValueError:
-                                                raise SyntaxError(
+                                                raise cls.ValidationError(
                                                     f'key {cls.format_keys(new_keys)} cannot be cast to {wildcard}')
                                 elif (
                                     (callable(wildcard) and cls._fc(wildcard, key, strict=strict, keys=new_keys) != key)
@@ -261,7 +268,7 @@ class Colchian:
                                      not isinstance(wildcard[0], type) and
                                      cls._fc(wildcard[0], key, *wildcard[1:], strict=strict, keys=new_keys) != key)
                                    ):
-                                    raise SyntaxError(
+                                    raise cls.ValidationError(
                                         f'mismatch between key {cls.format_keys(new_keys)} and generated key')
                                 elif (
                                     isinstance(wildcard, tuple) and
@@ -284,26 +291,29 @@ class Colchian:
                                     else:
                                         if id(key) == id(converted):
                                             if types:
-                                                raise SyntaxError(
+                                                raise cls.ValidationError(
                                                     f'key {cls.format_keys(new_keys)} could not be cast to any {types}')
                                             else:
-                                                raise SyntaxError(
+                                                raise cls.ValidationError(
                                                     f'restricted key {cls.format_keys(new_keys)} not in {wildcard}')
                                     key = converted
                                     new_keys[-1] = key
                                 y = cls.validated(value, data_type[wildcard], strict, new_keys)
                                 break
-                            except SyntaxError as e:
+                            except cls.ValidationError as e:
                                 if len(wildcards) == 1:
-                                    raise SyntaxError(f'could not match to only wildcard {wildcard}, raised `{e}`')
+                                    raise cls.ValidationError(
+                                        f'could not match to only wildcard {wildcard}, raised `{e}`')
                                 continue
                         else:
                             if strict:
-                                raise SyntaxError(
+                                raise cls.ValidationError(
                                     f'value of {cls.format_keys(new_keys)} could not be matched to wildcard')
                             result[key] = x[key]
                             continue
                         result[key] = y
+                    else:
+                        result[key] = cls.validated(*values[key])
             return result
         elif hasattr(data_type, '__origin__') and (data_type.__origin__ == Union):
             result = cls.validated(x, tuple(data_type.__args__), strict, _keys)
@@ -318,21 +328,22 @@ class Colchian:
                     try:
                         result = cls.validated(x, type_value, strict, _keys)
                         break
-                    except SyntaxError as e:
+                    except cls.ValidationError as e:
                         if len(data_type) == 1:
                             raise e
                         continue
                 else:
-                    raise SyntaxError(f'value does not match any of the optional types at {cls.format_keys(_keys)}')
+                    raise cls.ValidationError(
+                        f'value does not match any of the optional types at {cls.format_keys(_keys)}')
         elif hasattr(data_type, '__origin__') and (data_type.__origin__ == list):
             result = cls.validated(x, list(data_type.__args__), strict, _keys)
         elif isinstance(data_type, list):
             # read an empty list as a list of any type (any list can be empty)
             data_type = [Any] if not data_type else data_type
             if not isinstance(x, list):
-                raise SyntaxError(f'expected a list at {cls.format_keys(_keys)}, got {type(x)}')
+                raise cls.ValidationError(f'expected a list at {cls.format_keys(_keys)}, got {type(x)}')
             if len(data_type) != 1:
-                raise SyntaxError(
+                raise cls.ValidationError(
                     f'multiple types for list content unexpected at {cls.format_keys(_keys)}: {data_type}')
             result = [cls.validated(elem, data_type[0], strict, _keys + [f'[{n}]']) for n, elem in enumerate(x)]
         elif isinstance(data_type, type):
@@ -340,20 +351,20 @@ class Colchian:
                 result = x
             else:
                 if strict:
-                    raise SyntaxError(f'strict type mismatch (no casting) at {cls.format_keys(_keys)}, '
-                                      f'expected `{data_type.__name__}`, found `{type(x).__name__}`')
+                    raise cls.ValidationError(f'strict type mismatch (no casting) at {cls.format_keys(_keys)}, '
+                                              f'expected `{data_type.__name__}`, found `{type(x).__name__}`')
                 try:
                     result = data_type(x)
                 except ValueError:
-                    raise SyntaxError(f'type mismatch, casting failed at {cls.format_keys(_keys)}, '
-                                      f'expected `{data_type.__name__}`, found `{type(x).__name__}`')
+                    raise cls.ValidationError(f'type mismatch, casting failed at {cls.format_keys(_keys)}, '
+                                              f'expected `{data_type.__name__}`, found `{type(x).__name__}`')
         elif data_type is Any:
             result = x
         elif callable(data_type):
             result = cls._execute_callable(x, data_type, strict=strict, keys=_keys)
         elif x != data_type:
             # remaining option is identity, the "data_type" is a value that's required
-            raise SyntaxError(f'value "{x}" does not match expected "{data_type}" at {cls.format_keys(_keys)}')
+            raise cls.ValidationError(f'value "{x}" does not match expected "{data_type}" at {cls.format_keys(_keys)}')
         else:
             result = copy(data_type)
         return result

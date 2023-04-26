@@ -4,6 +4,17 @@
 
 No unreleased changes pending
 
+## [0.0.9] - 2023-04-26
+
+### Added:
+  - extra documentation for wildcards
+
+### Changed:
+  - throw Colchian.ValidationError instead of SyntaxError when validation fails
+
+### Fixed:
+  - `.validated()` returns a copy with the keys in the same order as the original
+
 ## [0.0.8] - 2023-04-04
 
 ### Added:
@@ -46,7 +57,7 @@ In this example, any dictionaries of type `MyDict`  returned by `Colchian.valida
 ## [0.0.4] - 2021-09-02
 
 ### Fixed:
-  - an AssertionError was not caught correctly, and has been replaced with the expected SyntaxError
+  - an AssertionError was not caught correctly, and has been replaced with the expected Colchian.ValidationError
 
 ## [0.0.3] - 2021-09-01
 

@@ -9,7 +9,7 @@ class MyColchian(Colchian):
         if (is_file and Path(x).is_file()) or (not is_file and Path(x).is_dir()):
             return x
         else:
-            raise SyntaxError(f'Expected a existing path, got {x}, at {cls.format_keys(keys)}')
+            raise MyColchian.ValidationError(f'Expected a existing path, got {x}, at {cls.format_keys(keys)}')
 
 
 example_configuration_type = {

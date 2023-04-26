@@ -33,5 +33,5 @@ try:
             'executable': exists,
             'arguments': [str]
         })
-except SyntaxError as e:
+except Colchian.ValidationError as e:
     print(f'Error {e}, at {MyColchian.last_keys}')

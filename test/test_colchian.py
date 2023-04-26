@@ -32,7 +32,8 @@ class TestJsonTyping(unittest.TestCase):
                          'required and not required fields work with Union[None, type] and Optional[type]')
         data = {
         }
-        with self.assertRaises(SyntaxError, msg='missing required key in data results in SyntaxError'):
+        with self.assertRaises(Colchian.ValidationError,
+                               msg='missing required key in data results in Colchian.ValidationError'):
             Colchian.validated(data, td)
 
     def test_simple_types(self):
@@ -61,17 +62,17 @@ class TestJsonTyping(unittest.TestCase):
             'i': 1,
             'f': '1.5'
         }
-        with self.assertRaises(SyntaxError, msg='simple types mismatches'):
+        with self.assertRaises(Colchian.ValidationError, msg='simple types mismatches'):
             Colchian.validated(data, td, strict=True)  # default
         try:
             Colchian.validated(data, td, strict=False)
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail("simple types cast when not strict")
         data = {
             'i': 1,
             'f': 'banana'
         }
-        with self.assertRaises(SyntaxError, msg='simple types mismatches when not strict and no cast'):
+        with self.assertRaises(Colchian.ValidationError, msg='simple types mismatches when not strict and no cast'):
             Colchian.validated(data, td, strict=False)
 
     def test_wildcards(self):
@@ -155,12 +156,12 @@ class TestJsonTyping(unittest.TestCase):
         data = {
             'x': 3
         }
-        with self.assertRaises(SyntaxError, msg='custom types fail when strict'):
+        with self.assertRaises(Colchian.ValidationError, msg='custom types fail when strict'):
             Colchian.validated(data, td)
         try:
             result = Colchian.validated(data, td, strict=False)
             self.assertIsInstance(result['x'], MyInt, 'custom type preserved')
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('custom types only validate when not strict')
 
     def _test_union(self, td):
@@ -170,7 +171,7 @@ class TestJsonTyping(unittest.TestCase):
         try:
             result = Colchian.validated(data, td)
             self.assertEqual(3, result['x'], 'int option resolved correctly for union')
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('int option allowed in union')
         data = {
             'x': 'test'
@@ -178,12 +179,12 @@ class TestJsonTyping(unittest.TestCase):
         try:
             result = Colchian.validated(data, td)
             self.assertEqual('test', result['x'], 'str option resolved correctly for union')
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('str option allowed in union')
         data = {
             'x': 0.3
         }
-        with self.assertRaises(SyntaxError, msg='float option not allowed in str, int union'):
+        with self.assertRaises(Colchian.ValidationError, msg='float option not allowed in str, int union'):
             Colchian.validated(data, td)
 
     def test_union_variants(self):
@@ -205,7 +206,7 @@ class TestJsonTyping(unittest.TestCase):
         }
         try:
             Colchian.validated({}, td)
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('optional value allowed for None in Union')
 
         td = {
@@ -213,7 +214,7 @@ class TestJsonTyping(unittest.TestCase):
         }
         try:
             Colchian.validated({}, td)
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('optional value allowed for Optional Union')
 
         td = {
@@ -221,13 +222,13 @@ class TestJsonTyping(unittest.TestCase):
         }
         try:
             Colchian.validated({}, td)
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('optional value allowed for Union paired with None')
 
     def test_callable(self):
         def yes_no(x, strict, keys):
             if x not in ['yes', 'no']:
-                raise SyntaxError('Only yes or no allowed')
+                raise Colchian.ValidationError('Only yes or no allowed')
             return True if x == 'yes' else False
 
         def add_params(x, y, z, strict, keys):
@@ -239,15 +240,15 @@ class TestJsonTyping(unittest.TestCase):
         self.assertEqual({'y': True}, Colchian.validated({'y': 'yes'}, {'y': yes_no}),
                          'basic callable returning bool')
 
-        with self.assertRaises(SyntaxError, msg='strict bool fails on non-bool text'):
+        with self.assertRaises(Colchian.ValidationError, msg='strict bool fails on non-bool text'):
             Colchian.validated({'bool': 'not True'}, {'bool': Colchian.text_bool})
         try:
             self.assertEqual({'bool': True}, Colchian.validated({'bool': 'True'}, {'bool': Colchian.text_bool},
                                                                 strict=False),
                              'non-bool text is True when not strict')
-        except SyntaxError:
+        except Colchian.ValidationError:
             self.fail('non-bool text does not fail when not strict')
-        with self.assertRaises(SyntaxError, msg='callable fails on mismatched text'):
+        with self.assertRaises(Colchian.ValidationError, msg='callable fails on mismatched text'):
             Colchian.validated({'x': 'test'}, {'x': yes_no})
 
         self.assertEqual({'x': 'xab'}, Colchian.validated({'x': 'x'}, {'x': (add_params, 'a', 'b')}),
@@ -266,11 +267,11 @@ class TestJsonTyping(unittest.TestCase):
         }
         self.assertEqual(data, Colchian.validated(data, td),
                          'basic lists get correctly resolved')
-        with self.assertRaises(SyntaxError, msg='only int accepted in list of int when strict'):
+        with self.assertRaises(Colchian.ValidationError, msg='only int accepted in list of int when strict'):
             Colchian.validated({'xs': ['3']}, td)
         self.assertEqual({'xs': [1, 2, 3]}, Colchian.validated({'xs': [1.0, 2, '3']}, td, strict=False),
                          'list int values are cast when not strict')
-        with self.assertRaises(SyntaxError, msg='only str accepted in list of str when strict'):
+        with self.assertRaises(Colchian.ValidationError, msg='only str accepted in list of str when strict'):
             Colchian.validated({'zs': [3]}, td)
         self.assertEqual({'zs': ['1.0', '2', '3']}, Colchian.validated({'zs': [1.0, 2, '3']}, td, strict=False),
                          'list str values are cast when not strict')
@@ -285,45 +286,45 @@ class TestJsonTyping(unittest.TestCase):
     def test_type_key(self):
         self.assertEqual({1: 'one'}, Colchian.validated({1: 'one'}, {int: 'one'}),
                          'type keys are validated')
-        with self.assertRaises(SyntaxError, msg='type key mismatch caught'):
+        with self.assertRaises(Colchian.ValidationError, msg='type key mismatch caught'):
             Colchian.validated({'1': 'one'}, {int: 'one'})
-        with self.assertRaises(SyntaxError, msg='type key value mismatch caught'):
+        with self.assertRaises(Colchian.ValidationError, msg='type key value mismatch caught'):
             Colchian.validated({1: 'one'}, {int: 'two'})
 
     def test_callable_key(self):
         def uppercase(x, strict, keys):
             if x.upper() != x:
-                raise SyntaxError('key not in uppercase')
+                raise Colchian.ValidationError('key not in uppercase')
             return x
 
         def uppercase_no_keywords(x):
             if x.upper() != x:
-                raise SyntaxError('key not in uppercase')
+                raise Colchian.ValidationError('key not in uppercase')
             return x
 
         self.assertEqual({'ABC': 1}, Colchian.validated({'ABC': 1}, {uppercase: int}),
                          'callable keys are validated')
-        with self.assertRaises(SyntaxError, msg='callable key mismatch caught'):
+        with self.assertRaises(Colchian.ValidationError, msg='callable key mismatch caught'):
             Colchian.validated({'Abc': 1}, {uppercase: int})
-        with self.assertRaises(SyntaxError, msg='callable key value mismatch caught'):
+        with self.assertRaises(Colchian.ValidationError, msg='callable key value mismatch caught'):
             Colchian.validated({'ABC': 'one'}, {uppercase: int})
-        with self.assertRaises(SyntaxError, msg='same result with keywords lacking'):
+        with self.assertRaises(Colchian.ValidationError, msg='same result with keywords lacking'):
             Colchian.validated({'ABC': 'one'}, {uppercase_no_keywords: int})
 
     def test_callable_parameters_key(self):
         def greater(x, y, strict, keys):
             if x <= y:
-                raise SyntaxError(f'{x} not greater than {y}')
+                raise Colchian.ValidationError(f'{x} not greater than {y}')
             return x
         self.assertEqual({4: 1}, Colchian.validated({4: 1}, {(greater, 3): (greater, 0)}),
                          'callable keys with parameters are validated')
-        with self.assertRaises(SyntaxError, msg='callable key with parameters mismatch caught'):
+        with self.assertRaises(Colchian.ValidationError, msg='callable key with parameters mismatch caught'):
             Colchian.validated({4: 1}, {(greater, 5): int})
 
     def test_tuple_restricted_key(self):
         self.assertEqual({3: 1, 4: 1}, Colchian.validated({3: 1, 4: 1}, {(3, 4): 1}),
                          'tuple restricted keys are validated')
-        with self.assertRaises(SyntaxError, msg='tuple restricted key with parameters mismatch caught'):
+        with self.assertRaises(Colchian.ValidationError, msg='tuple restricted key with parameters mismatch caught'):
             Colchian.validated({3: 1, 5: 1}, {(3, 4): 1})
         self.assertEqual({1: 1, 10: 1}, Colchian.validated({1: 1, 10: 1}, {tuple(range(1, 11)): 1}),
                          'tuple restricted keys are validated')
@@ -362,10 +363,10 @@ class TestJsonTyping(unittest.TestCase):
             int: int,
         }
         self.assertEqual({1: 2}, Colchian.validated({1: 2}, td), 'int key check works')
-        with self.assertRaises(SyntaxError, msg='cast not allowed when strict'):
+        with self.assertRaises(Colchian.ValidationError, msg='cast not allowed when strict'):
             Colchian.validated({'1': 2}, td, strict=True)
         self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=False), 'int cast works when not strict')
-        with self.assertRaises(SyntaxError, msg='impossible cast not allowed') as cm:
+        with self.assertRaises(Colchian.ValidationError, msg='impossible cast not allowed') as cm:
             Colchian.validated({'1.0': 2}, td, strict=False)
         self.assertEqual(
             'could not match to only wildcard <class \'int\'>, raised `key `["1.0"]` cannot be cast to <class \'int\'>`',
@@ -385,7 +386,7 @@ class TestJsonTyping(unittest.TestCase):
         }
         self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=True),
                          'no conversion to first type in pair')
-        with self.assertRaises(SyntaxError, msg='float key not allowed for strict (int, str)') as cm:
+        with self.assertRaises(Colchian.ValidationError, msg='float key not allowed for strict (int, str)') as cm:
             Colchian.validated({1.0: 2}, td, strict=True)
         self.assertEqual({1: 2}, Colchian.validated({1: 2}, td, strict=True),
                          'no conversion to first type in pair')

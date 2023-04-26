@@ -6,5 +6,5 @@ with open('example_configuration.json') as f:
         data = load(f)
         v_data = MyColchian.validated(data, example_configuration_type)
         print(v_data)
-    except SyntaxError as e:
+    except MyColchian.ValidationError as e:
         print(e)

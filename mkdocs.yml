@@ -5,9 +5,10 @@ nav:
   - 'Colchian class': colchian.md
   - 'Examples': examples.md
   - About: about.md
-theme: readthedocs
-features:
-  - content.code.copy
+theme:
+  name: readthedocs
+  features:
+    - content.code.copy
 markdown_extensions:
   - admonition
 plugins:

@@ -1,7 +1,7 @@
 ## Data types in `Colchian.validated()` results
 
 Consider this:
-```python
+``` { .py .copy }
 from colchian import Colchian
 
 
@@ -40,7 +40,7 @@ This example demonstrates a few points:
 ## Using Colchian to validate .json files
 
 If you have this configuration file `config.json` (assuming you're on Windows and these locations exist):
-```json
+``` { .json .copy }
 {
   "path": "C:\\Windows\\Temp",
   "executable": "C:\\Windows\\notepad.exe",
@@ -48,7 +48,7 @@ If you have this configuration file `config.json` (assuming you're on Windows an
 }
 ```
 The following code will load and validate it:
-```python
+``` { .py .copy }
 from colchian import Colchian
 import json
 from pathlib import Path
@@ -84,7 +84,7 @@ This example demonstrates the following:
 - the validation function can return a different type than the original value (here it returns a `Path` object).
 
 However, if there's a problem with he configuration file, you can't tell what line the problem is on:
-```json
+``` { .json .copy }
 {
   "path": "C:\\Windows\\Temp",
   "executable": "C:\\Path\\to\\non-existing\\file.exe",
@@ -93,12 +93,12 @@ However, if there's a problem with he configuration file, you can't tell what li
 ```
 Running the script with this config will give you this error:
 ```none
-SyntaxError: value at `["executable"]` passed to `exists` raised `Path "C:\Path\to\non-existing\file.exe" is not a file`
+Colchian.ValidationError: value at `["executable"]` passed to `exists` raised `Path "C:\Path\to\non-existing\file.exe" is not a file`
 ```
 For such a small configuration file, that's fine. But what if this was hidden in a large and complex configuration file?
 
 Colchian doesn't solve that problem by itself, but one approach would be to override the `format_keys()` method of the `Colchian` class, to capture the last set of keys that were formatted, and using those with a third party package like `json_source_map`. 
-```python
+``` { .py .copy }
 from colchian import Colchian
 import json
 from pathlib import Path
@@ -134,7 +134,7 @@ try:
             'executable': exists,
             'arguments': [str]
         })
-except SyntaxError as e:
+except Colchian.ValidationError as e:
     print(f'Error {e}, at {MyColchian.last_keys}')
 ```
 The value of `MyColchian.last_keys` could be used with something like `json_source_map` to get the line number of the error.
@@ -144,7 +144,7 @@ The value of `MyColchian.last_keys` could be used with something like `json_sour
 Configuration files can typically have many settings, many of which are optional, or structured themselves.
 
 Here's an example of a more complex structure defined using `Colchian`:
-```python
+``` { .py .copy }
 from colchian import Colchian
 from pathlib import Path
 
@@ -154,7 +154,7 @@ class MyColchian(Colchian):
         if (is_file and Path(x).is_file()) or (not is_file and Path(x).is_dir()):
             return x
         else:
-            raise SyntaxError(f'Expected an existing path, got {x}, at {cls.format_keys(keys)}')
+            raise Colchian.ValidationError(f'Expected an existing path, got {x}, at {cls.format_keys(keys)}')
 
     @classmethod
     def data_pair(cls, x, keys=None):
@@ -162,8 +162,8 @@ class MyColchian(Colchian):
         if len(x) == 2:
             return x
         else:
-            raise SyntaxError(f'Expected an event, duration pair, '
-                              f'got {x} ({len(x)} elements), at {cls.format_keys(keys)}')
+            raise Colchian.ValidationError(f'Expected an event, duration pair, '
+                                           f'got {x} ({len(x)} elements), at {cls.format_keys(keys)}')
 
 
 heh_config = {
