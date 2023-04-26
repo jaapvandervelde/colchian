@@ -4,7 +4,7 @@
 
 No unreleased changes pending
 
-## [0.1.1] - 2023-04-26
+## [0.1.2] - 2023-04-26
 
 ### Fixed:
   - pin `jinja2` version in hopes of fixing readthedocs.io deployment issue 
@@ -96,7 +96,7 @@ type_dict = {
   - Unit tests for core functionality
 
 [Unreleased]: /../../../
-[0.1.1]: /../../../tags/0.1.1
+[0.1.1]: /../../../tags/0.1.2
 [0.1.0]: /../../../tags/0.1.0
 [0.0.9]: /../../../tags/0.0.9
 [0.0.8]: /../../../tags/0.0.8
