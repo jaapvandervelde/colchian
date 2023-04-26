@@ -4,6 +4,13 @@
 
 No unreleased changes pending
 
+## [0.0.8] - 2023-04-04
+
+### Added:
+  - `mkdocs` documentation for readthedocs.io
+
+Note: dismissed the idea of help-text generation. Modules like `conffu` can add this on top of `colchian` as needed. 
+
 ## [0.0.7] - 2023-03-15
 
 ### Added:
@@ -69,6 +76,8 @@ type_dict = {
   - Unit tests for core functionality
 
 [Unreleased]: /../../../
+[0.0.8]: /../../../tags/0.0.8
+[0.0.7]: /../../../tags/0.0.7
 [0.0.6]: /../../../tags/0.0.6
 [0.0.5]: /../../../tags/0.0.5
 [0.0.4]: /../../../tags/0.0.4

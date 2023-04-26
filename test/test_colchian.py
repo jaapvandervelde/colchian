@@ -368,7 +368,7 @@ class TestJsonTyping(unittest.TestCase):
         with self.assertRaises(SyntaxError, msg='impossible cast not allowed') as cm:
             Colchian.validated({'1.0': 2}, td, strict=False)
         self.assertEqual(
-            'could not match to only wildcard <class \'int\'>, raised "key `["1.0"]` cannot be cast to <class \'int\'>"',
+            'could not match to only wildcard <class \'int\'>, raised `key `["1.0"]` cannot be cast to <class \'int\'>`',
             str(cm.exception)
         )
 

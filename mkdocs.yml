@@ -1,0 +1,15 @@
+site_name: Colchian
+nav:
+  - Home: index.md
+  - 'Getting Started': getting_started.md
+  - 'Colchian class': colchian.md
+  - 'Examples': examples.md
+  - About: about.md
+theme: readthedocs
+features:
+  - content.code.copy
+markdown_extensions:
+  - admonition
+plugins:
+  - search
+  - mkdocstrings

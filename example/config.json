@@ -1,0 +1,5 @@
+{
+  "path": "C:\\Windows\\Temp",
+  "executable": "C:\\Path\\to\\non-existing\\file.exe",
+  "arguments": ["-a", "b" ,"c", "--fast"]
+}

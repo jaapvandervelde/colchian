@@ -4,14 +4,98 @@ from copy import copy
 
 
 class Colchian:
+    """
+    Colchian is a library for validating and coercing data structures. You don't typically instantiate this class, but
+    instead use the static and class methods to validate data.
+
+    Examples:
+    ```python
+    from colchian import Colchian
+
+    type_dict = {"an integer": int, "some strings": [str]}
+    data = {"an integer": 42, "some strings": ["vastly", "hugely", "mind-bogglingly", "big"]}
+    valid_data = Colchian.validated(data, type_dict)
+    ```
+    """
     ALLOW_INSPECT = True
+    """
+    If set to `True`, allows Colchian to inspect callables to avoid passing `strict` or `keys` arguments if the 
+    callable does not support these. If you set `ALLOW_INSPECT` to `False`, this may improve performance, but then
+    all callables must support `strict` and `keys` arguments getting passed to them.
+    
+    Example:
+    ```
+    from colchian import Colchian
+    
+    
+    def the_answer(x):
+        return x == 42
+    
+    
+    print(Colchian.validated({'answer': 42}, {'answer': the_answer}))
+    
+    
+    def the_answer_no_inspect(x, strict, keys):
+        return x == 42
+    
+    
+    Colchian.ALLOW_INSPECT = False
+    print(Colchian.validated({'answer': 42}, {'answer': the_answer_no_inspect}))
+    ```
+    These function identically, but the second one is faster, because it doesn't inspect the callable - it does
+    however require the unused `strict` and `keys` arguments. 
+    """
 
     logger = getLogger()
 
     type_factories = {}
+    """
+    A dictionary of `type: factory_function` pairs. The factory function is called when a new instance of the type
+    needs to be constructed, allowing you to set certain defaults. The factory function must accept a single argument,
+    which will be the value of the data being validated. The factory function must return an instance of the type of
+    that data, with initialisation or other operations performed on it.
+    
+    Example:
+    ```
+    from colchian import Colchian    
+    
+    class MyDict(dict):
+        def __init__(self, p):
+            super().__init__()
+            self.p = p
+            self.script = None
+    
+    
+    def my_dict(d):
+        result = type(d)(d.p)  # setting `p` on the result to `d.p`
+        result.script = __file__
+        return result
+        
+   
+    d = MyDict('42')
+    Colchian.type_factories[MyDict] = my_dict  # setting up the factory function for the type
+    d2 = Colchian.validated(d, {})
+    print(d2.script, d2.p == d2.p)  # print the name of the script that called validated(), and True 
+    ``` 
+    """
 
     @staticmethod
-    def format_keys(keys: List[str]):
+    def format_keys(keys: List[Any]) -> str:
+        """
+        Formats a list of keys into a string for use in error messages
+
+        Args:
+            keys: keys of any type (though typically str), that must convert into str
+
+        Returns:
+            a string representation of how `keys` would be used to access a dict, in backticks
+
+        Examples:
+        ```
+        >>> Colchian.format_keys(['a', 'b', 'c'])
+        '`["a"]["b"]["c"]`'
+        ```
+        """
         keys = "".join(
             f"[\"{key}\"]" if i == 0 else f"[\"{key}\"]"
             if isinstance(key, str) and len(key) > 0 and key[0] + key[-1] != "[]"
@@ -20,6 +104,22 @@ class Colchian:
 
     @classmethod
     def text_bool(cls, x: Any, strict: bool, keys: List[str]) -> bool:
+        """
+        Usable example of a function that can be used to represent a boolean as case-insensitive text.
+        Valid representations are: 't', 'f', 'true', or 'false'. If `strict` is `True`, only those representations
+        are allowed, otherwise any non-False representation will return `True`.
+
+        Args:
+            x: the value
+            strict: allow alternative non-False representations
+            keys: keys of the currently validated element
+
+        Returns:
+            the boolean value represented by `x`
+
+        Raises:
+            SyntaxError: if `x` does not represent a bool
+        """
         if isinstance(x, bool):
             return x
         if isinstance(x, str):
@@ -31,6 +131,23 @@ class Colchian:
 
     @classmethod
     def _execute_callable(cls, x, data_type, *args, strict, keys, **kwargs):
+        """
+        Execute a callable, and catch any exceptions. The result of the call to the callable is returned.
+
+        Args:
+            x:
+            data_type:
+            *args:
+            strict:
+            keys:
+            **kwargs:
+
+        Returns:
+            The function results of the call to `x` with the provided arguments
+
+        Raises:
+            SyntaxError if the call to `x` raises an exception, containing the exception message
+        """
         try:
             return cls._fc(data_type, x, *args, strict=strict, keys=keys, **kwargs)
         except SyntaxError as e:
@@ -44,6 +161,18 @@ class Colchian:
 
     @classmethod
     def _fc(cls, f, *args, **kwargs):
+        """
+        Helper function that calls a function, and removes `strict` and `keys` arguments if the function does not
+        support them (and the class is allowed to use inspect).
+
+        Args:
+            f: the callable
+            *args: arguments to pass to the callable
+            **kwargs: keyword arguments to pass to the callable
+
+        Returns:
+            The return value of the callable, as called with the arguments
+        """
         if cls.ALLOW_INSPECT:
             import inspect
             i_args = inspect.getargs(f.__code__).args
@@ -54,7 +183,24 @@ class Colchian:
         return f(*args, **kwargs)
 
     @classmethod
-    def validated(cls, x: Any, data_type: Any, strict: bool = True, _keys: Union[List, None] = None):
+    def validated(cls, x: Any, data_type: Any, strict: bool = True, _keys: Union[List, None] = None) -> Any:
+        """
+        Validate a value against a type specification. This function is called recursively, but typically it is called
+        directly with `x` and `data_type` as dictionary arguments. Strict validation implies that only keys in the
+        `data_type` are allowed in `x`, and that value types must match the defined type. If `strict` is `False`, then
+        additional keys will be skipped, and types will be coerced to the defined type if possible.
+
+        Args:
+            x: the value to validate, typically a dict
+            data_type: the type specification, typically a dict
+            strict: whether to validate strictly
+            _keys: for internal use in recursion
+
+        Returns:
+            The validated value, the same type as `x`, but possibly with some type coercion. The validated value will
+            be newly constructed, using the same types as the original. Both dictionary and list types are supported
+            for structuring the data.
+        """
         if _keys is None:
             _keys = []
         if isinstance(data_type, dict):
@@ -165,9 +311,6 @@ class Colchian:
             if data_type and not isinstance(data_type[0], type) and callable(data_type[0]):
                 result = cls._execute_callable(x, data_type[0], *data_type[1:], strict=strict, keys=_keys)
             else:
-                if isinstance(data_type[-1], str):
-                    # TODO: generate help from final string
-                    data_type = data_type[:-1]
                 for type_value in data_type:
                     # tuple may contain None when checking optional values
                     if type_value is None:
@@ -176,7 +319,7 @@ class Colchian:
                         result = cls.validated(x, type_value, strict, _keys)
                         break
                     except SyntaxError as e:
-                        if len(data_type) == 1 or (len(data_type) and None in data_type):
+                        if len(data_type) == 1:
                             raise e
                         continue
                 else:

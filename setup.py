@@ -4,6 +4,12 @@ from setuptools import setup
 
 __name__ = 'colchian'
 
+project_urls = {
+    'Home page': 'https://pypi.org/project/colchian',
+    'Source Code': 'https://github.com/jaapvandervelde/colchian',
+    'Documentation': 'https://colchian.readthedocs.io/'
+}
+
 version_fn = os.path.join(__name__, "_version.py")
 __version__ = "unknown"
 try:
@@ -27,7 +33,7 @@ setup(
     packages=['colchian'],
     version=__version__,
     license='MIT',
-    description='Validate json documents using a Python dictionary defining keys and types.',
+    description='Validate json/yaml documents using a Python dictionary defining keys and types.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='BMT Commercial Australia Pty Ltd, Jaap van der Velde',
@@ -35,6 +41,12 @@ setup(
     url='https://gitlab.com/jaapvandervelde/colchian',
     keywords=['json', 'validator'],
     install_requires=[],
+    extras_require={
+        'dev': [
+            'mkdocs',
+            'pymdown-extensions'
+        ]
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
