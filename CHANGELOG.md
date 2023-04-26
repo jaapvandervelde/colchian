@@ -4,6 +4,11 @@
 
 No unreleased changes pending
 
+## [0.2.1] - 2023-04-26
+
+### Added:
+  - defined `pyproject.toml` to avoid `pip` warnings at install time
+
 ## [0.2.0] - 2023-04-26
 
 ### Fixed:
