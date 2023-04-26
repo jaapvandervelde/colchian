@@ -4,10 +4,10 @@
 
 No unreleased changes pending
 
-## [0.1.5] - 2023-04-26
+## [0.2.0] - 2023-04-26
 
 ### Fixed:
-  - pin `jinja2` version in hopes of fixing readthedocs.io deployment issue 
+  - tried several strategies to get readthedocs.io updated, but for this version the documentation will remain offline 
 
 ## [0.1.0] - 2023-04-26
 
