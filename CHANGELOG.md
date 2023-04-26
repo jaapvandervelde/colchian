@@ -4,6 +4,10 @@
 
 No unreleased changes pending
 
+## [0.1.0] - 2023-04-26
+
+Version published for external integration, no changes.
+
 ## [0.0.9] - 2023-04-26
 
 ### Added:
